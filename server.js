@@ -21,5 +21,5 @@ app.get('/api/stream',(req,res)=>{
  if(latest) res.write(`data: ${JSON.stringify(latest)}\n\n`);
  clients.add(res); req.on('close',()=>clients.delete(res));
 });
-app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','oslo-maraton.html')));
+app.use((req,res)=>res.sendFile(path.join(__dirname,'public','oslo-maraton.html')));
 app.listen(PORT,'0.0.0.0',()=>console.log(`Maraton Live Tracker running on port ${PORT}`));
