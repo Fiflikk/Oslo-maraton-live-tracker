@@ -1,12 +1,102 @@
-<!doctype html><html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Oslo Maraton – Live Tracker</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b0d10;color:#fff}#map{position:fixed;inset:0}.panel{position:fixed;z-index:1000;left:16px;right:16px;top:16px;max-width:520px;margin:auto;background:rgba(12,15,19,.92);backdrop-filter:blur(12px);border:1px solid #30353d;border-radius:18px;padding:16px;box-shadow:0 12px 40px #0008}.title{font-size:20px;font-weight:800}.sub{color:#aeb5bf;font-size:13px;margin-top:2px}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.btn{border:0;border-radius:12px;padding:12px 14px;font-weight:700;cursor:pointer}.primary{background:#fff;color:#000}.danger{background:#3a1518;color:#ffb3b8}.ghost{background:#20252c;color:#fff}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.stat{background:#181c22;border-radius:12px;padding:10px}.label{font-size:11px;color:#929aa6}.value{font-size:17px;font-weight:800;margin-top:3px}.status{margin-top:10px;font-size:12px;color:#b8c0ca}.gpsbanner{margin-top:10px;padding:9px 11px;border-radius:10px;background:#20252c;color:#cbd2dc;font-size:12px;font-weight:700}.gpsbanner.live{background:#14351f;color:#9ff0b2}.gpsbanner.warn{background:#3b2d12;color:#ffd98a}.runner{font-size:22px}.leaflet-control-attribution{font-size:9px!important}</style></head><body><div id="map"></div><div class="panel"><div class="title">🏃 Oslo Maraton – Live Tracker</div><div class="sub">Egen GPS-sporing + maratonløype</div><div id="gpsBanner" class="gpsbanner">📍 Ikke startet</div><div class="stats"><div class="stat"><div class="label">Status</div><div class="value" id="status">Klar</div></div><div class="stat"><div class="label">Fart</div><div class="value" id="speed">–</div></div><div class="stat"><div class="label">GPS</div><div class="value" id="accuracy">–</div></div></div><div class="row"><button class="btn primary" id="start">▶ Start GPS</button><button class="btn danger" id="stop">■ Stopp</button><button class="btn ghost" id="follow">◎ Følg meg</button></div><div class="status" id="detail">Åpne denne siden på iPhone og trykk Start GPS. Posisjonen sendes til live-trackeren.</div></div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
-const map=L.map('map').setView([59.91,10.73],13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);let route,marker,accuracyCircle,watchId=null,follow=true;
-fetch('route.json').then(r=>r.json()).then(points=>{route=L.polyline(points.map(p=>[p.lat,p.lon]),{weight:5,opacity:.85}).addTo(map);map.fitBounds(route.getBounds(),{padding:[30,30]});});
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Oslo Maraton – Live Tracker</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eef2f5;color:#172033}#map{position:fixed;inset:0}
+.panel{position:fixed;z-index:1000;left:16px;right:16px;top:16px;max-width:520px;margin:auto;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border:1px solid #dfe5eb;border-radius:18px;padding:16px;box-shadow:0 12px 40px #17203322}
+.title{font-size:21px;font-weight:850}.sub{color:#687386;font-size:13px;margin-top:2px}.gpsbanner{margin-top:11px;padding:9px 11px;border-radius:10px;background:#edf1f5;color:#526074;font-size:12px;font-weight:750}.gpsbanner.live{background:#e8f8ed;color:#147a38}.gpsbanner.warn{background:#fff3d9;color:#8a5a00}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}.stat{background:#f3f5f7;border-radius:12px;padding:10px}.label{font-size:11px;color:#7a8595}.value{font-size:16px;font-weight:850;margin-top:3px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;cursor:pointer;font-size:14px}.primary{background:#159447;color:#fff}.danger{background:#f0e8ea;color:#9b2531}.ghost{background:#e9edf1;color:#263246}
+.status{margin-top:10px;font-size:12px;color:#687386}.runnerCards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.runnerCard{background:#f5f7f9;border:1px solid #e1e6eb;border-radius:13px;padding:10px 11px;display:flex;align-items:center;gap:9px}.runnerDot{width:13px;height:13px;border-radius:50%;flex:0 0 auto}.red{background:#e53935}.blue{background:#1677e8}.runnerName{font-weight:850}.runnerState{font-size:11px;color:#788396;margin-top:2px}.how{margin-top:12px;padding:11px 12px;border-radius:12px;background:#eef7ff;color:#35516d;font-size:12px;line-height:1.45}.how b{color:#193d60}
+.runnerIcon{background:transparent!important;border:0!important}.pin{width:38px;height:38px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px #0004;border:3px solid #fff}.pin span{transform:rotate(45deg);font-size:21px;line-height:1}.pin.redpin{background:#e53935}.pin.bluepin{background:#1677e8}.leaflet-control-attribution{font-size:9px!important}
+.modalBack{position:fixed;inset:0;background:#0b122099;z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}.modal{width:min(430px,100%);background:#fff;border-radius:20px;padding:22px;box-shadow:0 20px 70px #0006}.modal h2{margin:0 0 6px;font-size:23px}.modal p{margin:0;color:#687386;font-size:13px}.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.choice{border:2px solid #dfe5eb;background:#fff;border-radius:15px;padding:15px;text-align:left;font-size:16px;font-weight:850;cursor:pointer}.choice:hover{border-color:#8aa0b8}.choice .big{font-size:28px;display:block;margin-bottom:5px}.choice.tommy{color:#1469ce}.choice.fredrik{color:#d92f2c}.cancel{margin-top:12px;width:100%;background:#edf1f5;color:#374458}
+@media(max-width:520px){.panel{left:10px;right:10px;top:10px;padding:13px}.title{font-size:18px}.stats{grid-template-columns:repeat(3,1fr)}.value{font-size:14px}.btn{padding:11px 12px}.runnerCards{gap:6px}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel">
+  <div class="title">🏃 Oslo Maraton – Live Tracker</div>
+  <div class="sub">To løpere · live GPS-sporing</div>
+  <div id="gpsBanner" class="gpsbanner">📍 Ingen GPS aktiv på denne telefonen</div>
+  <div class="stats">
+    <div class="stat"><div class="label">Status</div><div class="value" id="status">Klar</div></div>
+    <div class="stat"><div class="label">Fart</div><div class="value" id="speed">–</div></div>
+    <div class="stat"><div class="label">GPS</div><div class="value" id="accuracy">–</div></div>
+  </div>
+  <div class="runnerCards">
+    <div class="runnerCard"><span class="runnerDot red"></span><div><div class="runnerName">Fredrik</div><div class="runnerState" id="fredrikState">Venter på GPS</div></div></div>
+    <div class="runnerCard"><span class="runnerDot blue"></span><div><div class="runnerName">Tommy</div><div class="runnerState" id="tommyState">Venter på GPS</div></div></div>
+  </div>
+  <div class="row"><button class="btn primary" id="start">▶ Start GPS</button><button class="btn danger" id="stop">■ Stopp</button><button class="btn ghost" id="follow">◎ Følg meg</button></div>
+  <div class="status" id="detail">På en løpetelefon: trykk Start GPS og velg hvem du er. På en vanlig skjerm/telefon vises begge løperne automatisk.</div>
+  <div class="how"><b>Slik fungerer det:</b> Fredrik vises med rødt ikon og Tommy med blått ikon. Hver løpetelefon velger bare sin egen løper når GPS startes. Alle som åpner siden kan se begge samtidig.</div>
+</div>
+<div class="modalBack" id="modalBack">
+  <div class="modal">
+    <h2>Hvem er du?</h2><p>Velg løperen som bruker denne telefonen.</p>
+    <div class="choices">
+      <button class="choice fredrik" data-runner="Fredrik"><span class="big">🏃</span>Fredrik</button>
+      <button class="choice tommy" data-runner="Tommy"><span class="big">🏃</span>Tommy</button>
+    </div>
+    <button class="btn cancel" id="cancelModal">Avbryt</button>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map=L.map('map').setView([59.91,10.73],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+let route,watchId=null,follow=true,selectedRunner=null;
+const runners={
+  Fredrik:{color:'#e53935',marker:null,circle:null,last:null},
+  Tommy:{color:'#1677e8',marker:null,circle:null,last:null}
+};
+fetch('route.json').then(r=>r.json()).then(points=>{route=L.polyline(points.map(p=>[p.lat,p.lon]),{color:'#253c5b',weight:5,opacity:.85}).addTo(map);map.fitBounds(route.getBounds(),{padding:[30,30]});});
 function fmtSpeed(mps){return Number.isFinite(mps)?(mps*3.6).toFixed(1)+' km/t':'–'}
 function setBanner(text,cls=''){const b=document.getElementById('gpsBanner');b.textContent=text;b.className='gpsbanner '+cls}
-function update(p){const c=p.coords||p;const lat=c.latitude??c.lat,lon=c.longitude??c.lon,acc=c.accuracy??null,speed=c.speed??p.speed??null,heading=c.heading??p.heading??null;if(!Number.isFinite(lat)||!Number.isFinite(lon))return;if(!marker){marker=L.marker([lat,lon],{icon:L.divIcon({className:'runner',html:'🏃',iconSize:[30,30],iconAnchor:[15,15]})}).addTo(map)}else marker.setLatLng([lat,lon]);if(acc){if(!accuracyCircle)accuracyCircle=L.circle([lat,lon],{radius:acc,weight:1,fillOpacity:.08}).addTo(map);else accuracyCircle.setLatLng([lat,lon]).setRadius(acc)}if(follow)map.panTo([lat,lon]);document.getElementById('speed').textContent=fmtSpeed(speed);document.getElementById('accuracy').textContent=acc?Math.round(acc)+' m':'–';document.getElementById('status').textContent='LIVE';if(p.fromServer){setBanner('🟢 Live-posisjon mottatt','live')}document.getElementById('detail').textContent=new Date(p.timestamp||Date.now()).toLocaleTimeString('no-NO')+(heading!=null?' · retning '+Math.round(heading)+'°':'');}
-async function send(pos){const c=pos.coords;const payload={lat:c.latitude,lon:c.longitude,accuracy:c.accuracy,speed:c.speed,heading:c.heading,timestamp:pos.timestamp};update(pos);setBanner('🟢 GPS aktiv – sender posisjon','live');try{await fetch('/api/location',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})}catch(e){document.getElementById('status').textContent='Kun lokal';document.getElementById('detail').textContent='GPS fungerer, men serveren mottok ikke posisjonen.'}}
-start.onclick=()=>{if(!navigator.geolocation)return alert('Nettleseren støtter ikke GPS.');if(location.protocol!=='https:'&&location.hostname!=='localhost'){setBanner('⚠️ HTTPS kreves for GPS på iPhone','warn');return alert('Åpne siden via HTTPS på iPhone for å bruke GPS.');}if(watchId!==null)navigator.geolocation.clearWatch(watchId);setBanner('📍 Søker etter GPS-posisjon…');watchId=navigator.geolocation.watchPosition(send,err=>{document.getElementById('status').textContent='GPS-feil';document.getElementById('detail').textContent=err.message;setBanner('⚠️ GPS-feil: '+err.message,'warn')},{enableHighAccuracy:true,maximumAge:2000,timeout:15000});document.getElementById('status').textContent='Starter…'};
-stop.onclick=()=>{if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=null;document.getElementById('status').textContent='Stoppet'};follow.onclick=()=>{follow=!follow;document.getElementById('follow').textContent=follow?'◎ Følg meg':'○ Følg meg'};
-const es=new EventSource('/api/stream');es.onmessage=e=>{const p=JSON.parse(e.data);update({coords:{latitude:p.lat,longitude:p.lon,accuracy:p.accuracy,speed:p.speed,heading:p.heading},timestamp:p.timestamp,fromServer:true});};
-</script></body></html>
+function iconFor(name){return L.divIcon({className:'runnerIcon',html:`<div class="pin ${name==='Tommy'?'bluepin':'redpin'}"><span>🏃</span></div>`,iconSize:[38,38],iconAnchor:[19,32]})}
+function updateRunner(p){
+  const name=p.runner;if(!runners[name])return;
+  const c=p.coords||p;const lat=c.latitude??c.lat,lon=c.longitude??c.lon,acc=c.accuracy??null,speed=c.speed??p.speed??null;
+  if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
+  const r=runners[name];r.last={lat,lon,accuracy:acc,speed,timestamp:p.timestamp||Date.now()};
+  if(!r.marker)r.marker=L.marker([lat,lon],{icon:iconFor(name),zIndexOffset:name==='Tommy'?20:10}).addTo(map);else r.marker.setLatLng([lat,lon]);
+  if(acc){if(!r.circle)r.circle=L.circle([lat,lon],{radius:acc,weight:1,fillOpacity:.06,color:r.color}).addTo(map);else r.circle.setLatLng([lat,lon]).setRadius(acc)}
+  document.getElementById(name.toLowerCase()+'State').textContent='🟢 Live · '+new Date(r.last.timestamp).toLocaleTimeString('no-NO');
+  if(name===selectedRunner){
+    document.getElementById('speed').textContent=fmtSpeed(speed);
+    document.getElementById('accuracy').textContent=acc?Math.round(acc)+' m':'–';
+    document.getElementById('status').textContent='LIVE';
+    document.getElementById('detail').textContent=name+' · '+new Date(r.last.timestamp).toLocaleTimeString('no-NO');
+    if(p.fromServer)setBanner('🟢 Live-posisjon mottatt','live');
+    if(follow)map.panTo([lat,lon]);
+  }
+}
+async function send(pos){
+  const c=pos.coords;if(!selectedRunner)return;
+  const payload={runner:selectedRunner,lat:c.latitude,lon:c.longitude,accuracy:c.accuracy,speed:c.speed,heading:c.heading,timestamp:pos.timestamp};
+  updateRunner({runner:selectedRunner,coords:c,timestamp:pos.timestamp});setBanner('🟢 GPS aktiv – sender '+selectedRunner,'live');
+  try{await fetch('/api/location',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})}
+  catch(e){document.getElementById('status').textContent='Kun GPS';document.getElementById('detail').textContent='GPS fungerer, men serveren mottok ikke posisjonen.'}
+}
+function startFor(name){
+  selectedRunner=name;
+  document.getElementById('modalBack').style.display='none';
+  if(!navigator.geolocation)return alert('Nettleseren støtter ikke GPS.');
+  if(location.protocol!=='https:'&&location.hostname!=='localhost'){setBanner('⚠️ HTTPS kreves for GPS på iPhone','warn');return alert('Åpne siden via HTTPS på iPhone for å bruke GPS.');}
+  if(watchId!==null)navigator.geolocation.clearWatch(watchId);
+  setBanner('📍 Søker etter GPS-posisjon…');
+  watchId=navigator.geolocation.watchPosition(send,err=>{document.getElementById('status').textContent='GPS-feil';document.getElementById('detail').textContent=err.message;setBanner('⚠️ GPS-feil: '+err.message,'warn')},{enableHighAccuracy:true,maximumAge:2000,timeout:15000});
+  document.getElementById('status').textContent='Starter…';document.getElementById('detail').textContent='Trackingen er satt til '+name+'. La denne siden være åpen mens du løper.';
+}
+start.onclick=()=>{if(watchId!==null)return;document.getElementById('modalBack').style.display='flex'};
+stop.onclick=()=>{if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=null;document.getElementById('status').textContent='Stoppet';setBanner('📍 GPS stoppet');document.getElementById('detail').textContent='Trykk Start GPS for å starte igjen.'};
+document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>startFor(b.dataset.runner));
+cancelModal.onclick=()=>document.getElementById('modalBack').style.display='none';
+follow.onclick=()=>{follow=!follow;document.getElementById('follow').textContent=follow?'◎ Følg meg':'○ Følg meg'};
+const es=new EventSource('/api/stream');es.onmessage=e=>{const p=JSON.parse(e.data);updateRunner({...p,fromServer:true});};
+</script>
+</body></html>
