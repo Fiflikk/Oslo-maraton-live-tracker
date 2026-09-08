@@ -10,7 +10,7 @@
 .title{font-size:21px;font-weight:850}.sub{color:#687386;font-size:13px;margin-top:2px}.gpsbanner{margin-top:11px;padding:9px 11px;border-radius:10px;background:#edf1f5;color:#526074;font-size:12px;font-weight:750}.gpsbanner.live{background:#e8f8ed;color:#147a38}.gpsbanner.warn{background:#fff3d9;color:#8a5a00}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}.stat{background:#f3f5f7;border-radius:12px;padding:10px}.label{font-size:11px;color:#7a8595}.value{font-size:16px;font-weight:850;margin-top:3px}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;cursor:pointer;font-size:14px}.primary{background:#159447;color:#fff}.danger{background:#f0e8ea;color:#9b2531}.ghost{background:#e9edf1;color:#263246}
-.status{margin-top:10px;font-size:12px;color:#687386}.runnerCards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.runnerCard{background:#f5f7f9;border:1px solid #e1e6eb;border-radius:13px;padding:10px 11px;display:flex;align-items:center;gap:9px}.runnerDot{width:13px;height:13px;border-radius:50%;flex:0 0 auto}.red{background:#e53935}.blue{background:#1677e8}.runnerName{font-weight:850}.runnerState{font-size:11px;color:#788396;margin-top:2px}.how{margin-top:12px;padding:11px 12px;border-radius:12px;background:#eef7ff;color:#35516d;font-size:12px;line-height:1.45}.how b{color:#193d60}
+.status{margin-top:10px;font-size:12px;color:#687386}.runnerCards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.runnerCard{appearance:none;width:100%;text-align:left;background:#f5f7f9;border:2px solid #e1e6eb;border-radius:13px;padding:10px 11px;display:flex;align-items:center;gap:9px;cursor:pointer;transition:.15s}.runnerCard:hover{border-color:#aab6c5;transform:translateY(-1px)}.runnerCard.active{background:#fff;border-color:#172033;box-shadow:0 4px 14px #17203318}.runnerDot{width:13px;height:13px;border-radius:50%;flex:0 0 auto}.red{background:#e53935}.blue{background:#1677e8}.runnerName{font-weight:850}.runnerState{font-size:11px;color:#788396;margin-top:2px}.how{margin-top:12px;padding:11px 12px;border-radius:12px;background:#eef7ff;color:#35516d;font-size:12px;line-height:1.45}.how b{color:#193d60}
 .runnerIcon{background:transparent!important;border:0!important}.pin{width:38px;height:38px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px #0004;border:3px solid #fff}.pin span{transform:rotate(45deg);font-size:21px;line-height:1}.pin.redpin{background:#e53935}.pin.bluepin{background:#1677e8}.leaflet-control-attribution{font-size:9px!important}
 .modalBack{position:fixed;inset:0;background:#0b122099;z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}.modal{width:min(430px,100%);background:#fff;border-radius:20px;padding:22px;box-shadow:0 20px 70px #0006}.modal h2{margin:0 0 6px;font-size:23px}.modal p{margin:0;color:#687386;font-size:13px}.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.choice{border:2px solid #dfe5eb;background:#fff;border-radius:15px;padding:15px;text-align:left;font-size:16px;font-weight:850;cursor:pointer}.choice:hover{border-color:#8aa0b8}.choice .big{font-size:28px;display:block;margin-bottom:5px}.choice.tommy{color:#1469ce}.choice.fredrik{color:#d92f2c}.cancel{margin-top:12px;width:100%;background:#edf1f5;color:#374458}
 @media(max-width:520px){.panel{left:10px;right:10px;top:10px;padding:13px}.title{font-size:18px}.stats{grid-template-columns:repeat(3,1fr)}.value{font-size:14px}.btn{padding:11px 12px}.runnerCards{gap:6px}}
@@ -28,16 +28,16 @@
     <div class="stat"><div class="label">GPS</div><div class="value" id="accuracy">–</div></div>
   </div>
   <div class="runnerCards">
-    <div class="runnerCard"><span class="runnerDot red"></span><div><div class="runnerName">Fredrik</div><div class="runnerState" id="fredrikState">Venter på GPS</div></div></div>
-    <div class="runnerCard"><span class="runnerDot blue"></span><div><div class="runnerName">Tommy</div><div class="runnerState" id="tommyState">Venter på GPS</div></div></div>
+    <button class="runnerCard" id="fredrikCard" data-follow="Fredrik" type="button"><span class="runnerDot red"></span><div><div class="runnerName">🔴 Fredrik</div><div class="runnerState" id="fredrikState">Venter på GPS · trykk for å følge</div></div></button>
+    <button class="runnerCard" id="tommyCard" data-follow="Tommy" type="button"><span class="runnerDot blue"></span><div><div class="runnerName">🔵 Tommy</div><div class="runnerState" id="tommyState">Venter på GPS · trykk for å følge</div></div></button>
   </div>
-  <div class="row"><button class="btn primary" id="start">▶ Start GPS</button><button class="btn danger" id="stop">■ Stopp</button><button class="btn ghost" id="follow">◎ Følg meg</button></div>
-  <div class="status" id="detail">På en løpetelefon: trykk Start GPS og velg hvem du er. På en vanlig skjerm/telefon vises begge løperne automatisk.</div>
+  <div class="row"><button class="btn primary" id="start">▶ Start GPS</button><button class="btn danger" id="stop">■ Stopp</button></div>
+  <div class="status" id="detail">På en løpetelefon: trykk Start GPS og velg hvem du er. På en vanlig skjerm/telefon vises begge løperne automatisk. Trykk på Fredrik eller Tommy for å følge den løperen.</div>
   <div class="how"><b>Slik fungerer det:</b> Fredrik vises med rødt ikon og Tommy med blått ikon. Hver løpetelefon velger bare sin egen løper når GPS startes. Alle som åpner siden kan se begge samtidig.</div>
 </div>
 <div class="modalBack" id="modalBack">
   <div class="modal">
-    <h2>Hvem er du?</h2><p>Velg løperen som bruker denne telefonen.</p>
+    <h2>Hvem er du?</h2><p>Dette valget brukes bare på telefonen som skal sende GPS.</p>
     <div class="choices">
       <button class="choice fredrik" data-runner="Fredrik"><span class="big">🏃</span>Fredrik</button>
       <button class="choice tommy" data-runner="Tommy"><span class="big">🏃</span>Tommy</button>
@@ -49,7 +49,7 @@
 <script>
 const map=L.map('map').setView([59.91,10.73],13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-let route,watchId=null,follow=true,selectedRunner=null;
+let route,watchId=null,selectedRunner=null,followRunner=null;
 const runners={
   Fredrik:{color:'#e53935',marker:null,circle:null,last:null},
   Tommy:{color:'#1677e8',marker:null,circle:null,last:null}
@@ -65,14 +65,14 @@ function updateRunner(p){
   const r=runners[name];r.last={lat,lon,accuracy:acc,speed,timestamp:p.timestamp||Date.now()};
   if(!r.marker)r.marker=L.marker([lat,lon],{icon:iconFor(name),zIndexOffset:name==='Tommy'?20:10}).addTo(map);else r.marker.setLatLng([lat,lon]);
   if(acc){if(!r.circle)r.circle=L.circle([lat,lon],{radius:acc,weight:1,fillOpacity:.06,color:r.color}).addTo(map);else r.circle.setLatLng([lat,lon]).setRadius(acc)}
-  document.getElementById(name.toLowerCase()+'State').textContent='🟢 Live · '+new Date(r.last.timestamp).toLocaleTimeString('no-NO');
-  if(name===selectedRunner){
+  document.getElementById(name.toLowerCase()+'State').textContent='🟢 Live · '+new Date(r.last.timestamp).toLocaleTimeString('no-NO')+' · trykk for å følge';
+  if(name===followRunner){
     document.getElementById('speed').textContent=fmtSpeed(speed);
     document.getElementById('accuracy').textContent=acc?Math.round(acc)+' m':'–';
     document.getElementById('status').textContent='LIVE';
     document.getElementById('detail').textContent=name+' · '+new Date(r.last.timestamp).toLocaleTimeString('no-NO');
     if(p.fromServer)setBanner('🟢 Live-posisjon mottatt','live');
-    if(follow)map.panTo([lat,lon]);
+    map.panTo([lat,lon]);
   }
 }
 async function send(pos){
@@ -96,7 +96,23 @@ start.onclick=()=>{if(watchId!==null)return;document.getElementById('modalBack')
 stop.onclick=()=>{if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=null;document.getElementById('status').textContent='Stoppet';setBanner('📍 GPS stoppet');document.getElementById('detail').textContent='Trykk Start GPS for å starte igjen.'};
 document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>startFor(b.dataset.runner));
 cancelModal.onclick=()=>document.getElementById('modalBack').style.display='none';
-follow.onclick=()=>{follow=!follow;document.getElementById('follow').textContent=follow?'◎ Følg meg':'○ Følg meg'};
+document.querySelectorAll('[data-follow]').forEach(card=>card.onclick=()=>{
+  const name=card.dataset.follow;
+  followRunner=name;
+  document.querySelectorAll('.runnerCard').forEach(c=>c.classList.remove('active'));
+  card.classList.add('active');
+  const r=runners[name];
+  if(r.last){
+    map.setView([r.last.lat,r.last.lon],Math.max(map.getZoom(),15));
+    document.getElementById('speed').textContent=fmtSpeed(r.last.speed);
+    document.getElementById('accuracy').textContent=r.last.accuracy?Math.round(r.last.accuracy)+' m':'–';
+    document.getElementById('status').textContent='LIVE';
+    document.getElementById('detail').textContent='Følger '+name+' · trykk på den andre løperen for å bytte.';
+  } else {
+    document.getElementById('status').textContent='Venter';
+    document.getElementById('detail').textContent='Følger '+name+'. Venter på første GPS-posisjon.';
+  }
+});
 const es=new EventSource('/api/stream');es.onmessage=e=>{const p=JSON.parse(e.data);updateRunner({...p,fromServer:true});};
 </script>
 </body></html>
